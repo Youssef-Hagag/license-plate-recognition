@@ -15,6 +15,9 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 
+from skimage.measure import find_contours
+from skimage.draw import rectangle
+
 
 
 ##################################################################################################
@@ -621,8 +624,9 @@ def localization(img): #take BGR image and return BGR image
         #rotated = rotate_blue(plate_img)
         cropped = crop_up(plate_img)
     return cropped
+
 # Detect license plate using contours
-def plate_detection_using_contours():
+# def plate_detection_using_contours():
     car = pre_process_image('cars/car23.jpg')
     edged = cv2.Canny(car, 10, 200)
 
@@ -662,6 +666,67 @@ def plate_detection_using_contours():
     plate = car[y:y + h, x:x + w]
     return plate
 
+def calculate_area(image_array):
+    height, width = image_array[0].shape
+    return width * height
+
+
+# Detect license plate using contours
+def plate_detection_using_contours():
+    car = pre_process_image('cars/car21.jpg')
+    found = False
+    thresh = 200
+    plate = []
+
+    while found == False:
+        ret, bin_img = cv2.threshold(car,thresh,255,cv2.THRESH_BINARY)
+        open1 = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, np.ones((3,3),np.uint8))
+        close1 = cv2.morphologyEx(open1, cv2.MORPH_CLOSE, np.ones((5,5),np.uint8))
+        close2 = cv2.morphologyEx(close1, cv2.MORPH_CLOSE, np.ones((5,5),np.uint8))
+        open2 = cv2.morphologyEx(close2, cv2.MORPH_OPEN, np.ones((3,3),np.uint8))
+        
+        cv2.imshow('bin_img', bin_img)
+        cv2.imshow('close1', close1)
+        cv2.imshow('morphed', open2)
+        
+        # Find contours in the edged image
+        contours = find_contours(open2)
+        bounding_boxes = []
+        plate_suspects = []
+
+        # Iterate through the detected contours
+        for contour in contours:
+            width = contour[:, 1].max() - contour[:, 1].min()
+            height = contour[:, 0].max() - contour[:, 0].min()
+            aspect = width / height
+            if 1.5 < aspect < 4.5:
+                bounding_boxes.append([contour[:, 1].min(), contour[:, 1].max(), contour[:, 0].min(), contour[:, 0].max()])
+        img_with_boxes = np.zeros(shape=bin_img.shape)
+
+
+        # Get the bounding rectangle of the plate contour
+        for box in bounding_boxes:
+            [Xmin, Xmax, Ymin, Ymax] = box
+            rr, cc = rectangle(start = (Ymin,Xmin), end = (Ymax,Xmax), shape=bin_img.shape)
+            plate_suspects.append([close1[rr, cc], np.rot90(np.fliplr(car[rr, cc]), k=1)])
+            img_with_boxes[rr, cc] = 255 #set color white
+
+
+        plate_suspects = sorted(plate_suspects, key=calculate_area)
+        for plate_suspect in plate_suspects:
+            #closed_plate_suspect = cv2.morphologyEx(plate_suspect, cv2.MORPH_CLOSE, np.ones((4,4),np.uint8))
+            contours = find_contours(plate_suspect[0])
+            print(len(contours))
+            if 6 < len(contours) < 15:
+                plate = plate_suspect[1]
+                found = True
+            else:
+                continue
+        thresh -= 10
+
+    cv2.imshow('boxes', img_with_boxes)
+    cv2.imshow('plate', plate)
+    cv2.waitKey(0)
 
 # buildCharDB()
 # Perform plate detection using both methods
