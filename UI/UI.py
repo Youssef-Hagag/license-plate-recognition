@@ -5,31 +5,39 @@ import time
 import threading
 
 loading = False
+progress_thread = None
+image_thread = None
+
 def ProgressBar():
   global loading
-  i=0;
+  i = 0
   while True:
     if loading:
-        window['-RESULT-'].update("Processing"+'.'*(i%3+1))
-        window['-PROGRESS-'].update((i + 1)%101,visible=True)
-        i = (i + 1)%101
-        time.sleep(0.1)
-    else: 
-      window['-PROGRESS-'].update(0, visible=False);
-      i=0;
+      window['-RESULT-'].update("Processing" + '.' * (i % 3 + 1))
+      window['-PROGRESS-'].update((i + 1) % 101, visible=True)
+      i = (i + 1) % 101
+      time.sleep(0.1)
+    else:
+      window['-PROGRESS-'].update(0, visible=False)
+      i = 0
 
 def image_processing():
   global loading
   loading = True
-
-  # The heavy computation should be done here 
-  #----------------------------------------------------------------
+  image = Image.open(filename)
+  resized_image = image.resize((500, 300))
+  resized_image.save('resized_image.png')
+  window['-IMAGE-'].update(filename='resized_image.png')
+  window['-BROWSE-'].update(disabled=True)
+  # The heavy computation should be done here
+  # ----------------------------------------------------------------
   time.sleep(2)
-  #----------------------------------------------------------------
+  # ----------------------------------------------------------------
 
   # To be assigned in Image processing code
   loading = False
-  result = random.choice(['123 ا ب ج', '345 ق ص ر', '678 ث ت ن', '910 ح خ ذ', '1112 ز س ش', '1314 ض ط ظ','1516 ع غ ف', '1718 ق ك ل', '1920 م ن ه', '2122 و ي'])
+  window['-BROWSE-'].update(disabled=False)
+  result = random.choice(['123 ا ب ج', '345 ق ص ر', '678 ث ت ن', '910 ح خ ذ', '1112 ز س ش', '1314 ض ط ظ', '1516 ع غ ف', '1718 ق ك ل', '1920 م ن ه', '2122 و ي'])
   LED = random.choice(['Allowed', 'Banned'])
 
   window['-RESULT-'].update(result)
@@ -38,19 +46,32 @@ def image_processing():
     window['-LED-'].update(background_color='green')
   else:
     window['-LED-'].update(background_color='red')
-
+def waitOnThread():
+  global progress_thread
+  global image_thread
+  while True:
+    # Stop previous threads if they are running
+    if progress_thread and progress_thread.is_alive():
+      print("Stopping progress thread")
+      progress_thread.join()
+      progress_thread = None
+    if image_thread and image_thread.is_alive():
+      print("Stopping image thread")
+      image_thread.join()
+      image_thread = None
 layout = [
   [
     sg.Text('Select an image:', background_color='white', text_color='black'),
     sg.Input(key='-FILE-', enable_events=True, background_color='white', text_color='black'),
-    sg.FileBrowse(button_color=('black', 'gold'))
+    sg.FileBrowse(key='-BROWSE-', button_color=('black', 'gold'))
   ],
   [
     sg.Column([
       [sg.Image(key='-IMAGE-', size=(300, 300), background_color='white')],
       [sg.Frame('Processing Result', [
         [sg.Text('Processing result:', background_color='grey', text_color='black'),
-        sg.Text('', key='-RESULT-', size=(20, 1), background_color='white', text_color='black', font=('Helvetica', 15))],
+        sg.Text('', key='-RESULT-', size=(20, 1), background_color='white', text_color='black',
+              font=('Helvetica', 15))],
         [sg.Text('LED:', size=(10, 1), background_color='grey', text_color='black'),
         sg.Text('', key='-LED-', size=(5, 2), background_color='white', text_color='black')]
       ], background_color='grey', size=(500, 100))]
@@ -62,26 +83,25 @@ layout = [
 ]
 
 window = sg.Window('Image Processing', layout, resizable=True, background_color='white')
-
+# threading.Thread(target=waitOnThread, args=(), daemon=True).start()
 while True:
   event, values = window.read()
   if event in (sg.WIN_CLOSED, 'Exit'):
     break
+  if progress_thread == None:
+    progress_thread = threading.Thread(target=ProgressBar, args=(), daemon=True)
+    progress_thread.start()
 
   if event == '-FILE-':
     filename = values['-FILE-']
     if filename:
       try:
-        image = Image.open(filename)
-        resized_image = image.resize((500, 300))
-        resized_image.save('resized_image.png')
-        window['-IMAGE-'].update(filename='resized_image.png')
 
         # Image processing code
         progress_bar = window['-PROGRESS-']
         window['-LED-'].update('', background_color='white')
-        threading.Thread(target=image_processing, args=(), daemon=True).start()
-        threading.Thread(target=ProgressBar, args=(), daemon=True).start()
+        image_thread = threading.Thread(target=image_processing, args=(), daemon=True)
+        image_thread.start()
       except Exception as e:
         print(f"An error occurred: {e}")
 
