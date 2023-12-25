@@ -582,6 +582,36 @@ def plate_detection_using_contours(path):
 
     return plate
 
+# Detect license plate using contours
+def plate_detection():
+    car = pre_process_image('cars/car24.jpg')
+    edged = cv2.Canny(car, 10, 200)
+    
+    # Find contours in the edged image
+    contours, _ = cv2.findContours(edged, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    
+    # Sort the contours by area in descending order and select the top 5 contours
+    contours = sorted(contours, key=cv2.contourArea, reverse=True)[:5]
+
+    # Iterate through the detected contours
+    for contour in contours:
+        # Calculate the arc length of the contour
+        arc_length = cv2.arcLength(contour, True)
+        
+        # Approximate the contour shape to a polygonal curve
+        approx = cv2.approxPolyDP(contour, 0.02 * arc_length, True)
+        
+        # Check if the approximated polygon has 4 sides (likely a license plate)
+        if len(approx) == 4:
+            plate_contour = approx
+            break  # Stop iterating if a valid plate contour is found
+    
+    # Get the bounding rectangle of the plate contour
+    (x, y, w, h) = cv2.boundingRect(plate_contour)
+    
+    # Extract the region of interest (ROI) containing the detected plate
+    plate = car[y:y + h, x:x + w]
+    return plate
 
 def PlateToLetters(plate):
     dim = (1404, 446)

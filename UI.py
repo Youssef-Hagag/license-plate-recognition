@@ -77,7 +77,7 @@ layout = [
       [sg.Image(key='-IMAGE-', size=(300, 300), background_color='white')],
       [sg.Frame('Processing Result', [
         [sg.Text('Processing result:', background_color='grey', text_color='black'),
-        sg.Text('', key='-RESULT-', size=(20, 1), background_color='white', text_color='black',
+        sg.Text('', key='-RESULT-', size=(30, 1), background_color='white', text_color='black',
               font=('Helvetica', 15))],
         [sg.Text('LED:', size=(10, 1), background_color='grey', text_color='black'),
         sg.Text('', key='-LED-', size=(5, 2), background_color='white', text_color='black')]
