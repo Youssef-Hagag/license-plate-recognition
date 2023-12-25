@@ -2,7 +2,6 @@ from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 import cv2
 import math
-from bidi.algorithm import get_display
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -38,11 +37,11 @@ class Character:
             
         self.col_sum = np.zeros(shape=(height, width))
         self.corr = 0
-        self.resize_and_calculate(width, height)
+        self.resize_and_calculate(height, width)
 
-    def resize_and_calculate(self, width, height):
+    def resize_and_calculate(self, height, width):
         # Perform resizing of the template
-        dim = (width, height)
+        dim = (height, width)
         self.template = cv2.resize(self.template, dim, interpolation=cv2.INTER_AREA)
 
         # Perform calculations using char_calculations function
@@ -58,17 +57,17 @@ class NotCharacter:
             
         self.col_sum = np.zeros(shape=(height, width))
         self.corr = 0
-        self.resize_and_calculate(width, height)
+        self.resize_and_calculate(height, width)
 
-    def resize_and_calculate(self, width, height):
+    def resize_and_calculate(self, height, width):
         # Perform resizing of the template
-        dim = (width, height)
+        dim = (height, width)
         self.template = cv2.resize(self.template, dim, interpolation=cv2.INTER_AREA)
 
         # Perform calculations using char_calculations function
         self.corr, self.col_sum = char_calculations(self.template, height, width)
 
-def char_calculations(A, width, height):
+def char_calculations(A, height, width):
     A_mean = A.mean()
     col_A = 0
     corr_A = 0
@@ -653,18 +652,87 @@ def main2(imgI):
                 imgs.append(imgX)
     return imgs
 
-##############################################--Main--################################################
+def extract_features(letters):
+    letterFeatures = []
 
+    for letter in letters:
+        # Perform resizing of the template
+        ret, letter = cv2.threshold(letter,140,255,cv2.THRESH_BINARY)
+        dim = (charHeight, charWidth)
+        letter = cv2.resize(letter, dim, interpolation=cv2.INTER_AREA)
+        corr, col_sum = char_calculations(letter, charHeight, charWidth)
+        flattened_col_sum = col_sum.flatten()
+        letterFeatures.append(flattened_col_sum)
+
+    return letterFeatures
+
+
+##############################################--KNN--################################################
+# Extract features and labels from your CharDataBase
+features = []  # Add the features you want to use for similarity
+labels = []    # Add the corresponding labels
+
+# Initialize the KNN classifier
+k = 3
+knn = KNeighborsClassifier(n_neighbors=k,p=2,metric='euclidean')
+
+def testKnn():
+    # Split the data into training and testing sets
+    train_input, test_input, train_output, test_output = train_test_split(features, labels, test_size=20, random_state=200)
+
+    # Train the classifier
+    knn.fit(train_input, train_output)
+    print (test_input)
+    # Predict using the trained classifier
+    predictions = knn.predict(test_input)
+
+    # Evaluate the accuracy
+    accuracy = accuracy_score(test_output, predictions)
+    print("Accuracy:", accuracy)
+
+def trainKnn():
+    # Train the classifier
+    knn.fit(features, labels)
+
+
+def predictKnn(letter):
+    prediction = knn.predict(letter)
+    return prediction
+    
+
+##############################################--Main--################################################
+print("############################################################################################################")
 buildCharDB()
 buildAdditionsDB()
 buildParasitismsDB()
-plate = plate_detection_using_contours('cars\car21.jpg')
+
+for char_instance in CharDataBase:
+    # Assuming col_sum is a 2D array, flatten it to 1D
+    flattened_col_sum = char_instance.col_sum.flatten()
+    
+    # Concatenate or combine features as needed
+    #combined_features = np.concatenate([flattened_col_sum])
+    combined_features = flattened_col_sum
+    
+    # Append combined features and label to lists
+    features.append(combined_features)
+    labels.append(char_instance.char)
+
+
+plate = plate_detection_using_contours('cars\car28.jpg')
 cv2.waitKey(0)
-lettars=main2(plate)
+letters = main2(plate)
 cv2.waitKey(0)
 
 #loop and show all images
-print (len(lettars))
-for i in range(len(lettars)):
-    cv2.imshow('Image', lettars[i])
+print (len(letters))
+for i in range(len(letters)):
+    cv2.imshow('Image', letters[i])
     cv2.waitKey(0)
+
+#extract features from the resulting letters
+letterFeatures = extract_features(letters)
+
+#train the knn then predict the letters
+trainKnn()
+print(predictKnn(letterFeatures))
