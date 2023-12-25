@@ -585,8 +585,8 @@ def plate_detection_using_contours(path):
         return car
 
 # Detect license plate using contours
-def plate_detection():
-    car = pre_process_image('cars/car39.jpg')
+def plate_detection(path):
+    car = pre_process_image(path)
     edged = cv2.Canny(car, 10, 200)
     
     # Find contours in the edged image
@@ -621,7 +621,11 @@ def PlateToLetters(plate):
     blurPlate = cv2.blur(plate,(10,10))
     blurPlate = cv2.blur(blurPlate,(10,10))
     medianPlate= cv2.medianBlur(blurPlate,5)
-    _, thresholdPlate = cv2.threshold(medianPlate,150,255,cv2.THRESH_BINARY)
+    height, _ = medianPlate.shape[:2]
+    cropped_median_plate = medianPlate[0:height-20, :]
+    _, thresholdPlate = cv2.threshold(cropped_median_plate,150,255,cv2.THRESH_BINARY)
+    
+    ## i want to crop 20 px from this image  thresholdPlate
     
     
     
@@ -667,9 +671,12 @@ def PlateToLetters(plate):
     T = False
     for contour in contours:
         x,y,w,h = rect = cv2.boundingRect(contour)
+        print(x,y,w,h)
+        print(cv2.contourArea(contour))
         if(y>35 and x > 10 and y+h<750 and cv2.contourArea(contour) > 3000 and y < 575 and cv2.contourArea(contour) <100000):
+            print("zzzzzzzzzzzzzzzzzzzz")
             for index,r in enumerate(rects):
-                if((x-20<r[0] and x+w+20 > r[0]+r[2]) or (x+20>r[0] and x+w-20 < r[0]+r[2])and (y-50<r[1] and y+h+50 > r[1]+r[3]) or (y+50>r[1] and x+w-50 < r[1]+r[3])):
+                if((x-20<r[0] and x+w+20 > r[0]+r[2]) or (x+20>r[0] and x+w-20 < r[0]+r[2])):
                     T = True
                     miniImg = np.copy(plate[y:y+h,x:x+h])
                     if miniImg is not None:
@@ -841,5 +848,5 @@ def main(path):
 
     return predictKnn(letterFeatures)
 print("############################################################################################################")
-print(main("cars\car33.jpg"))
+print(main("cars\car32.jpg"))
 
