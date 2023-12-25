@@ -76,7 +76,7 @@ def char_calculations(A, height, width):
         img_col = 0
         while img_col < width:
             col_A += (A[img_row, img_col] - A_mean) ** 2
-            sum_list[img_row][img_col] = abs(A[img_row, img_col] - A_mean)
+            sum_list[img_row][img_col] = A[img_row, img_col]
             img_col += 1
         corr_A += col_A
         col_A = 0
@@ -170,11 +170,11 @@ def buildCharDB():
 
 
     # Numbers
-    One1 = Character("1", 'dataSet/Char/one_1.jpg')
-    One2 = Character("1", 'dataSet/Char/one_2.jpg')
-    One3 = Character("1", 'dataSet/Char/one_3.jpg')
-    One4 = Character("1", 'dataSet/Char/one_4.jpg')
-    One5 = Character("1", 'dataSet/Char/one_5.jpg')
+    One1 = Character("11", 'dataSet/Char/one_1.jpg')
+    One2 = Character("12", 'dataSet/Char/one_2.jpg')
+    One3 = Character("13", 'dataSet/Char/one_3.jpg')
+    One4 = Character("14", 'dataSet/Char/one_4.jpg')
+    One5 = Character("15", 'dataSet/Char/one_5.jpg')
     Two1 = Character("2", 'dataSet/Char/two_1.jpg')
     Two2 = Character("2", 'dataSet/Char/two_2.jpg')
     Two3 = Character("2", 'dataSet/Char/two_3.jpg')
@@ -657,6 +657,8 @@ def PlateToLetters(plate):
     # Concatenate the processed halves back together
     result_plate = np.hstack((open_left, open_right))
     
+    cv2.imshow('bin', result_plate)
+    cv2.waitKey(0)
     contours, _ = cv2.findContours(result_plate, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     contours = sort_contours(contours)[0]
 
@@ -823,27 +825,26 @@ def main(path):
 
 
     plate = plate_detection_using_contours(path)
-    cv2.imshow("plate",plate)
-    cv2.waitKey(0)
+    # cv2.imshow("plate",plate)
+    # cv2.waitKey(0)
     
     
     letters = PlateToLetters(plate)
-    cv2.waitKey(0)
+    # cv2.waitKey(0)
 
     # #loop and show all images
-    print (len(letters))
-    for i in range(len(letters)):
-        cv2.imshow('Image', letters[i])
-        cv2.waitKey(0)
+    # print (len(letters))
+    # for i in range(len(letters)):
+    #     cv2.imshow('Image', letters[i])
+    #     cv2.waitKey(0)
 
     #extract features from the resulting letters
     letterFeatures = extract_features(letters)
 
     #train the knn then predict the letters
     trainKnn()
-    print(predictKnn(letterFeatures))
 
-
+    return predictKnn(letterFeatures)
 print("############################################################################################################")
-print(main("cars\car39.jpg"))
+print(main("cars\car35.jpg"))
 
