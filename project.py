@@ -4,7 +4,6 @@ import cv2
 import math
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier
 from numba import jit
 from skimage.measure import find_contours
@@ -470,7 +469,7 @@ def sort_contours(cnts, method="left-to-right"):
 	return (cnts, boundingBoxes)
 
 @jit(nopython = True)
-def cal_corr_j(corr_A, corr_B, A_sum, B_sum):
+def cal_corr(corr_A, corr_B, A_sum, B_sum):
     corr_both = np.multiply(A_sum, B_sum)
     corr_both = corr_both.sum()
     r = corr_both / math.sqrt(corr_A * corr_B)
@@ -488,7 +487,7 @@ def isAdditionLetter(imgI):
         hist2 = cv2.calcHist([temp2], [0], None, [256], [0, 256])
 
         r = cv2.compareHist(hist1, hist2, method=cv2.HISTCMP_CORREL)
-        rCorr = cal_corr_j(letter.corr, l.corr, letter.col_sum, l.col_sum)
+        rCorr = cal_corr(letter.corr, l.corr, letter.col_sum, l.col_sum)
 
         if rCorr > 0.75 and r > 0.5:
             return True
@@ -506,7 +505,7 @@ def isBar(imgI):
         hist1=cv2.calcHist([temp1],[0],None,[256],[0,256]) 
         hist2=cv2.calcHist([temp2],[0],None,[256],[0,256]) 
         r = cv2.compareHist(hist1, hist2, method = cv2.HISTCMP_CORREL)
-        rCorr = cal_corr_j(letter.corr,l.corr,letter.col_sum,l.col_sum)
+        rCorr = cal_corr(letter.corr,l.corr,letter.col_sum,l.col_sum)
         if(rCorr>.8 and r > .8):
             return True
     return False
@@ -628,7 +627,6 @@ def PlateToLetters(plate):
     
     
     
-    
     # Create a custom kernel representing a 45-degree oval
     angle = 45  # Angle for the oval (in degrees)
     kernel_size = (25, 60)  # Size of the kernel
@@ -638,7 +636,6 @@ def PlateToLetters(plate):
     center = (kernel_size[0] // 2, kernel_size[1] // 2)
     rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1)
     rotated_kernel = cv2.warpAffine(kernel, rotation_matrix, kernel_size)
-    
     
     
     kernel1=cv2.getStructuringElement(cv2.MORPH_RECT,(20,30))
@@ -665,9 +662,7 @@ def PlateToLetters(plate):
 
 
     letters = []
-    conts = []
     rects = []
-    mendol = []
     mendolc = []
  
     T = False
@@ -701,8 +696,7 @@ def PlateToLetters(plate):
                 T = False
                 continue
             rects.append(rect)
-            mendol.append(rect)
-            conts.append(contour)
+
     for rect in rects:
         imgX = None
         imgX = np.copy(plate[rect[1]:rect[1]+rect[3],rect[0]:rect[0]+rect[2]])
@@ -828,11 +822,11 @@ def main(path):
         labels.append(char_instance.char)
 
 
-    plate = plate_detection_using_contours('cars\car39.jpg')
-
-    cv2.imshow('plate', plate)
+    plate = plate_detection_using_contours(path)
+    cv2.imshow("plate",plate)
     cv2.waitKey(0)
-    cv2.waitKey(0)
+    
+    
     letters = PlateToLetters(plate)
     cv2.waitKey(0)
 
@@ -851,5 +845,5 @@ def main(path):
 
 
 print("############################################################################################################")
-print(main("cars\car30.jpg"))
+print(main("cars\car39.jpg"))
 

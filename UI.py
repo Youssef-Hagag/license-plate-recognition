@@ -37,14 +37,14 @@ def image_processing():
   window['-BROWSE-'].update(disabled=True)
   # The heavy computation should be done here
   # ----------------------------------------------------------------
-
+  result = main(filename)
   
   # ----------------------------------------------------------------
 
   # To be assigned in Image processing code
   loading = False
   window['-BROWSE-'].update(disabled=False)
-  result = main(filename)
+  
   LED = random.choice(['Allowed', 'Banned'])
 
   window['-RESULT-'].update(result)
