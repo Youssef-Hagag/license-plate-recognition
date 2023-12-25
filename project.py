@@ -583,29 +583,26 @@ def plate_detection_using_contours(path):
     return plate
 
 
-def main2(imgI):
+def PlateToLetters(plate):
     dim = (1404, 446)
-    imgI = cv2.resize(imgI, dim, interpolation = cv2.INTER_AREA)
-    cv2.imshow("resized.jpg",imgI)    
-    w = imgI.shape[0]
-    h = imgI.shape[1]
-    imgB = cv2.blur(imgI,(10,10))
-    imgB = cv2.blur(imgB,(10,10))
-    imgM= cv2.medianBlur(imgB,5)
-    _, imgO = cv2.threshold(imgM,150,255,cv2.THRESH_BINARY)
-    cv2.imshow('imgO',imgO)
-    k1=cv2.getStructuringElement(cv2.MORPH_RECT,(10,15))
-    k2=cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
+    plate = cv2.resize(plate, dim, interpolation = cv2.INTER_AREA)
+    w = plate.shape[0]
+    h = plate.shape[1]
+    blurPlate = cv2.blur(plate,(10,10))
+    blurPlate = cv2.blur(blurPlate,(10,10))
+    medianPlate= cv2.medianBlur(blurPlate,5)
+    _, thresholdPlate = cv2.threshold(medianPlate,150,255,cv2.THRESH_BINARY)
+    kernel1=cv2.getStructuringElement(cv2.MORPH_RECT,(10,30))
+    kernel2=cv2.getStructuringElement(cv2.MORPH_RECT,(5,15))
 
-    c =  cv2.morphologyEx(imgO, cv2.MORPH_CLOSE, k2)
-    o =  cv2.morphologyEx(c, cv2.MORPH_OPEN, k1)
-    cv2.imshow("o.jpg",o)
-    contours, _ = cv2.findContours(o, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    close =  cv2.morphologyEx(thresholdPlate, cv2.MORPH_CLOSE, kernel2)
+    open =  cv2.morphologyEx(close, cv2.MORPH_OPEN, kernel1)
+    contours, _ = cv2.findContours(open, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     contours = sort_contours(contours)[0]
 
 
 
-    imgs = []
+    letters = []
     conts = []
     rects = []
     mendol = []
@@ -614,7 +611,8 @@ def main2(imgI):
     T = False
     for contour in contours:
         x,y,w,h = rect = cv2.boundingRect(contour)
-        if(y>50 and x > 10 and y+h<750 and cv2.contourArea(contour) > 3000 and y < 575 and cv2.contourArea(contour) <100000):
+        print(cv2.contourArea(contour))
+        if(y>35 and x > 10 and y+h<750 and cv2.contourArea(contour) > 3000 and y < 575 and cv2.contourArea(contour) <100000):
             mendolc.append(contour)
             for i,r in enumerate(rects):
                 if(x-20<r[0] and x+w+20 > r[0]+r[2])or (x>r[0]-20 and x+w-20 < r[0]+r[2]):
@@ -646,11 +644,59 @@ def main2(imgI):
             conts.append(contour)
     for rect in rects:
         imgX = None
-        imgX = np.copy(imgI[rect[1]:rect[1]+rect[3],rect[0]:rect[0]+rect[2]])
+        imgX = np.copy(plate[rect[1]:rect[1]+rect[3],rect[0]:rect[0]+rect[2]])
         if imgX is not None:
             if(not isBar(imgX)):
-                imgs.append(imgX)
-    return imgs
+                letters.append(imgX)
+    return letters
+
+def extract_features(letters):
+    letterFeatures = []
+
+    for letter in letters:
+        # Perform resizing of the template
+        ret, letter = cv2.threshold(letter,140,255,cv2.THRESH_BINARY)
+        dim = (charHeight, charWidth)
+        letter = cv2.resize(letter, dim, interpolation=cv2.INTER_AREA)
+        corr, col_sum = char_calculations(letter, charHeight, charWidth)
+        flattened_col_sum = col_sum.flatten()
+        letterFeatures.append(flattened_col_sum)
+
+    return letterFeatures
+
+
+##############################################--KNN--################################################
+# Extract features and labels from your CharDataBase
+features = []  # Add the features you want to use for similarity
+labels = []    # Add the corresponding labels
+
+# Initialize the KNN classifier
+k = 3
+knn = KNeighborsClassifier(n_neighbors=k,p=2,metric='euclidean')
+
+def testKnn():
+    # Split the data into training and testing sets
+    train_input, test_input, train_output, test_output = train_test_split(features, labels, test_size=20, random_state=200)
+
+    # Train the classifier
+    knn.fit(train_input, train_output)
+    print (test_input)
+    # Predict using the trained classifier
+    predictions = knn.predict(test_input)
+
+    # Evaluate the accuracy
+    accuracy = accuracy_score(test_output, predictions)
+    print("Accuracy:", accuracy)
+
+def trainKnn():
+    # Train the classifier
+    knn.fit(features, labels)
+
+
+def predictKnn(letter):
+    prediction = knn.predict(letter)
+    return prediction
+    
 
 def extract_features(letters):
     letterFeatures = []
@@ -721,7 +767,7 @@ for char_instance in CharDataBase:
 
 plate = plate_detection_using_contours('cars\car28.jpg')
 cv2.waitKey(0)
-letters = main2(plate)
+letters = PlateToLetters(plate)
 cv2.waitKey(0)
 
 #loop and show all images
