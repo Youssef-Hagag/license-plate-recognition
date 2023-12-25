@@ -527,7 +527,7 @@ def intersection(a,b):
     y = max(a[1], b[1])
     w = min(a[0]+a[2], b[0]+b[2]) - x
     h = min(a[1]+a[3], b[1]+b[3]) - y
-    if w<0 or h<0: return False # or (0,0,0,0) ?
+    if w<0 or h<0: return False 
     return True
 
 
@@ -665,25 +665,23 @@ def PlateToLetters(plate):
 
     letters = []
     rects = []
-    mendolc = []
  
     T = False
     for contour in contours:
         x,y,w,h = rect = cv2.boundingRect(contour)
         if(y>35 and x > 10 and y+h<750 and cv2.contourArea(contour) > 3000 and y < 575 and cv2.contourArea(contour) <100000):
-            mendolc.append(contour)
-            for i,r in enumerate(rects):
-                if(x-20<r[0] and x+w+20 > r[0]+r[2])or (x>r[0]-20 and x+w-20 < r[0]+r[2]):
+            for index,r in enumerate(rects):
+                if((x-20<r[0] and x+w+20 > r[0]+r[2]) or (x+20>r[0] and x+w-20 < r[0]+r[2])and (y-50<r[1] and y+h+50 > r[1]+r[3]) or (y+50>r[1] and x+w-50 < r[1]+r[3])):
                     T = True
                     miniImg = np.copy(plate[y:y+h,x:x+h])
                     if miniImg is not None:
                         if(isAdditionLetter(miniImg)):
+                            print("addition")
                             minY = min(y,r[1])                    
                             maxH = max(y+h,r[1]+r[3])-minY
                             minX = min(x,r[0])                    
                             maxW = max(x+w,r[0]+r[2])-minX
-                            rects[i] = (minX,minY,maxW,maxH)
-                            mendolc.append(contour)
+                            rects[index] = (minX,minY,maxW,maxH)
                             break
                 if (intersection(rect,r)):
                     T = True
@@ -691,8 +689,7 @@ def PlateToLetters(plate):
                     maxH = max(y+h,r[1]+r[3])-minY
                     minX = min(x,r[0])                    
                     maxW = max(x+w,r[0]+r[2])-minX
-                    rects[i] = (minX,minY,maxW,maxH)
-                    mendolc.append(contour)
+                    rects[index] = (minX,minY,maxW,maxH)
                     break
             if(T):
                 T = False
