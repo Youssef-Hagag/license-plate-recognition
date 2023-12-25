@@ -1,4 +1,6 @@
-frame = sg.Frame('Processing Result', layout=[
-        [sg.Text('Processing result:', background_color='white', text_color='black'), sg.Text('', key='-RESULT-', size=(20, 1), background_color='white', text_color='black')],
-        [sg.Text('LED:', size=(10, 1), background_color='white', text_color='black'), sg.Text('', key='-LED-', size=(5, 1), background_color='white', text_color='black')]
-      ], background_color='grey')
+for i in range(len(cur_progress_thread)):
+          cur_progress_thread[i].join()
+        cur_progress_thread.clear()
+        for i in range(len(cur_img_thread)):
+          cur_img_thread[i].join()
+        cur_img_thread.clear()
