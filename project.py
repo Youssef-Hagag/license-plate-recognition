@@ -535,15 +535,15 @@ def intersection(a,b):
 def plate_detection_using_contours(path):
     car = pre_process_image(path)
     found = False
-    thresh = 200
+    thresh = 180
     plate = []
 
-    while found == False:
+    while found == False and thresh >= 0:
         ret, bin_img = cv2.threshold(car,thresh,255,cv2.THRESH_BINARY)
-        open1 = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, np.ones((6,6),np.uint8))
-        close1 = cv2.morphologyEx(open1, cv2.MORPH_CLOSE, np.ones((10,10),np.uint8))
-        close2 = cv2.morphologyEx(close1, cv2.MORPH_CLOSE, np.ones((10,10),np.uint8))
-        open2 = cv2.morphologyEx(close2, cv2.MORPH_OPEN, np.ones((6,6),np.uint8))
+        open1 = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, np.ones((3,3),np.uint8))
+        close1 = cv2.morphologyEx(open1, cv2.MORPH_CLOSE, np.ones((3,3),np.uint8))
+        close2 = cv2.morphologyEx(close1, cv2.MORPH_CLOSE, np.ones((12,12),np.uint8))
+        open2 = cv2.morphologyEx(close2, cv2.MORPH_OPEN, np.ones((12,12),np.uint8))
         
         # Find contours in the edged image
         contours = find_contours(open2)
@@ -555,34 +555,38 @@ def plate_detection_using_contours(path):
             width = contour[:, 1].max() - contour[:, 1].min()
             height = contour[:, 0].max() - contour[:, 0].min()
             aspect = width / height
-            if 1.5 < aspect < 4.5:
+            if 2 < aspect < 6.5:
                 bounding_boxes.append([contour[:, 1].min(), contour[:, 1].max(), contour[:, 0].min(), contour[:, 0].max()])
         img_with_boxes = np.zeros(shape=bin_img.shape)
-
 
         # Get the bounding rectangle of the plate contour
         for box in bounding_boxes:
             [Xmin, Xmax, Ymin, Ymax] = box
-            rr, cc = rectangle(start = (Ymin,Xmin), end = (Ymax,Xmax), shape=bin_img.shape)
-            plate_suspects.append([close1[rr, cc], np.rot90(np.fliplr(car[rr, cc]), k=1)])
-            img_with_boxes[rr, cc] = 255 #set color white
+            if Xmin > 300 and Xmax < 900 and Ymin > 150 and Ymax < 650:
+                rr, cc = rectangle(start = (Ymin,Xmin), end = (Ymax,Xmax), shape=bin_img.shape)
+                plate_suspects.append([close1[rr, cc], np.rot90(np.fliplr(car[rr, cc]), k=1)])
+                img_with_boxes[rr, cc] = 255 #set color white
 
-
+        found_con_length = 3
         plate_suspects = sorted(plate_suspects, key=calculate_area)
         for plate_suspect in plate_suspects:
             contours = find_contours(plate_suspect[0])
-            if 6 < len(contours) < 15:
+            if found_con_length < len(contours):
                 plate = plate_suspect[1]
+                found_con_length = len(contours)
                 found = True
             else:
                 continue
         thresh -= 10
 
-    return plate
+    if found:
+        return plate
+    else:
+        return car
 
 # Detect license plate using contours
 def plate_detection():
-    car = pre_process_image('cars/car24.jpg')
+    car = pre_process_image('cars/car39.jpg')
     edged = cv2.Canny(car, 10, 200)
     
     # Find contours in the edged image
@@ -821,13 +825,20 @@ def main(path):
     
     
     letters = PlateToLetters(plate)
+    cv2.waitKey(0)
+
+    # #loop and show all images
+    print (len(letters))
+    for i in range(len(letters)):
+        cv2.imshow('Image', letters[i])
+        cv2.waitKey(0)
 
     #extract features from the resulting letters
     letterFeatures = extract_features(letters)
 
     #train the knn then predict the letters
     trainKnn()
-    return predictKnn(letterFeatures)
+    print(predictKnn(letterFeatures))
 
 
 # print("############################################################################################################")
