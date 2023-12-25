@@ -592,15 +592,43 @@ def PlateToLetters(plate):
     blurPlate = cv2.blur(blurPlate,(10,10))
     medianPlate= cv2.medianBlur(blurPlate,5)
     _, thresholdPlate = cv2.threshold(medianPlate,150,255,cv2.THRESH_BINARY)
-    kernel1=cv2.getStructuringElement(cv2.MORPH_RECT,(10,30))
-    kernel2=cv2.getStructuringElement(cv2.MORPH_RECT,(5,15))
+    
+    
+    
+    
+    # Create a custom kernel representing a 45-degree oval
+    angle = 45  # Angle for the oval (in degrees)
+    kernel_size = (25, 60)  # Size of the kernel
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, kernel_size)
 
-    close =  cv2.morphologyEx(thresholdPlate, cv2.MORPH_CLOSE, kernel2)
-    open =  cv2.morphologyEx(close, cv2.MORPH_OPEN, kernel1)
-    contours, _ = cv2.findContours(open, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    # Rotate the rectangular kernel to create a 45-degree oval-shaped kernel
+    center = (kernel_size[0] // 2, kernel_size[1] // 2)
+    rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1)
+    rotated_kernel = cv2.warpAffine(kernel, rotation_matrix, kernel_size)
+    
+    
+    
+    kernel1=cv2.getStructuringElement(cv2.MORPH_RECT,(20,30))
+    kernel2=cv2.getStructuringElement(cv2.MORPH_RECT,(7,16))
+    
+    
+    # Split the plate image into two halves
+    half_width = w // 2
+    left_half = thresholdPlate[:, :half_width]  # Left half of the plate image
+    right_half = thresholdPlate[:, half_width:]  # Right half of the plate image
+
+    # Apply morphological operations to each half separately
+    close_left = cv2.morphologyEx(left_half, cv2.MORPH_CLOSE, kernel2)
+    open_left = cv2.morphologyEx(close_left, cv2.MORPH_OPEN, kernel1)
+
+    close_right = cv2.morphologyEx(right_half, cv2.MORPH_CLOSE, kernel2)
+    open_right = cv2.morphologyEx(close_right, cv2.MORPH_OPEN, rotated_kernel)
+
+    # Concatenate the processed halves back together
+    result_plate = np.hstack((open_left, open_right))
+    
+    contours, _ = cv2.findContours(result_plate, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     contours = sort_contours(contours)[0]
-
-    cv2.imshow("open",open)
 
 
     letters = []
@@ -747,34 +775,38 @@ def predictKnn(letter):
     
 
 ##############################################--Main--################################################
+def main(path):
+    
+    print("entering main")
+    buildCharDB()
+    buildAdditionsDB()
+    buildParasitismsDB()
+
+    for char_instance in CharDataBase:
+        # Assuming col_sum is a 2D array, flatten it to 1D
+        flattened_col_sum = char_instance.col_sum.flatten()
+        
+        # Concatenate or combine features as needed
+        #combined_features = np.concatenate([flattened_col_sum])
+        combined_features = flattened_col_sum
+        
+        # Append combined features and label to lists
+        features.append(combined_features)
+        labels.append(char_instance.char)
+
+
+    plate = plate_detection_using_contours(path)
+    
+    letters = PlateToLetters(plate)
+
+    #extract features from the resulting letters
+    letterFeatures = extract_features(letters)
+
+    #train the knn then predict the letters
+    trainKnn()
+    return predictKnn(letterFeatures)
+
+
 print("############################################################################################################")
-buildCharDB()
-buildAdditionsDB()
-buildParasitismsDB()
+print(main("cars\car30.jpg"))
 
-for char_instance in CharDataBase:
-    # Assuming col_sum is a 2D array, flatten it to 1D
-    flattened_col_sum = char_instance.col_sum.flatten()
-    
-    # Concatenate or combine features as needed
-    #combined_features = np.concatenate([flattened_col_sum])
-    combined_features = flattened_col_sum
-    
-    # Append combined features and label to lists
-    features.append(combined_features)
-    labels.append(char_instance.char)
-
-
-plate = plate_detection_using_contours('cars\car30.jpg')
-cv2.imshow('plate',plate)
-cv2.waitKey(0)
-letters = PlateToLetters(plate)
-cv2.waitKey(0)
-
-
-#extract features from the resulting letters
-letterFeatures = extract_features(letters)
-
-#train the knn then predict the letters
-trainKnn()
-print(predictKnn(letterFeatures))

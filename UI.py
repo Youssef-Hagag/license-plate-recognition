@@ -37,21 +37,14 @@ def image_processing():
   window['-BROWSE-'].update(disabled=True)
   # The heavy computation should be done here
   # ----------------------------------------------------------------
-  plate = plate_detection_using_contours(filename)
-  letters = PlateToLetters(plate)
 
-  #extract features from the resulting letters
-  letterFeatures = extract_features(letters)
-
-  #train the knn then predict the letters
-  trainKnn()
   
   # ----------------------------------------------------------------
 
   # To be assigned in Image processing code
   loading = False
   window['-BROWSE-'].update(disabled=False)
-  result = predictKnn(letterFeatures)
+  result = main(filename)
   LED = random.choice(['Allowed', 'Banned'])
 
   window['-RESULT-'].update(result)
