@@ -3,6 +3,7 @@ from PIL import Image
 import random
 import time
 import threading
+from project import *
 
 loading = False
 progress_thread = None
@@ -31,13 +32,21 @@ def image_processing():
   window['-BROWSE-'].update(disabled=True)
   # The heavy computation should be done here
   # ----------------------------------------------------------------
-  time.sleep(2)
+  plate = plate_detection_using_contours(filename)
+  letters = PlateToLetters(plate)
+
+  #extract features from the resulting letters
+  letterFeatures = extract_features(letters)
+
+  #train the knn then predict the letters
+  trainKnn()
+  
   # ----------------------------------------------------------------
 
   # To be assigned in Image processing code
   loading = False
   window['-BROWSE-'].update(disabled=False)
-  result = random.choice(['123 ا ب ج', '345 ق ص ر', '678 ث ت ن', '910 ح خ ذ', '1112 ز س ش', '1314 ض ط ظ', '1516 ع غ ف', '1718 ق ك ل', '1920 م ن ه', '2122 و ي'])
+  result = predictKnn(letterFeatures)
   LED = random.choice(['Allowed', 'Banned'])
 
   window['-RESULT-'].update(result)

@@ -600,6 +600,7 @@ def PlateToLetters(plate):
     contours, _ = cv2.findContours(open, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     contours = sort_contours(contours)[0]
 
+    cv2.imshow("open",open)
 
 
     letters = []
@@ -611,13 +612,12 @@ def PlateToLetters(plate):
     T = False
     for contour in contours:
         x,y,w,h = rect = cv2.boundingRect(contour)
-        print(cv2.contourArea(contour))
         if(y>35 and x > 10 and y+h<750 and cv2.contourArea(contour) > 3000 and y < 575 and cv2.contourArea(contour) <100000):
             mendolc.append(contour)
             for i,r in enumerate(rects):
                 if(x-20<r[0] and x+w+20 > r[0]+r[2])or (x>r[0]-20 and x+w-20 < r[0]+r[2]):
                     T = True
-                    miniImg = np.copy(imgI[y:y+h,x:x+h])
+                    miniImg = np.copy(plate[y:y+h,x:x+h])
                     if miniImg is not None:
                         if(isAdditionLetter(miniImg)):
                             minY = min(y,r[1])                    
@@ -765,16 +765,12 @@ for char_instance in CharDataBase:
     labels.append(char_instance.char)
 
 
-plate = plate_detection_using_contours('cars\car28.jpg')
+plate = plate_detection_using_contours('cars\car30.jpg')
+cv2.imshow('plate',plate)
 cv2.waitKey(0)
 letters = PlateToLetters(plate)
 cv2.waitKey(0)
 
-#loop and show all images
-print (len(letters))
-for i in range(len(letters)):
-    cv2.imshow('Image', letters[i])
-    cv2.waitKey(0)
 
 #extract features from the resulting letters
 letterFeatures = extract_features(letters)
