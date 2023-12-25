@@ -25,7 +25,12 @@ def ProgressBar():
 def image_processing():
   global loading
   loading = True
-  image = Image.open(filename)
+  try:
+    image = Image.open(filename)
+  except IOError:
+    window['-RESULT-'].update("Cannot identify image file !")
+    loading = False
+    return
   resized_image = image.resize((500, 300))
   resized_image.save('resized_image.png')
   window['-IMAGE-'].update(filename='resized_image.png')
@@ -71,7 +76,7 @@ def waitOnThread():
 layout = [
   [
     sg.Text('Select an image:', background_color='white', text_color='black'),
-    sg.Input(key='-FILE-', enable_events=True, background_color='white', text_color='black'),
+    sg.Input(key='-FILE-' ,enable_events=True, background_color='white', text_color='black'),
     sg.FileBrowse(key='-BROWSE-', button_color=('black', 'gold'))
   ],
   [
