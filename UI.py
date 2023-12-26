@@ -9,6 +9,14 @@ loading = False
 progress_thread = None
 image_thread = None
 
+arr = [
+    ['9', '9' ,'9' ,'9' ,'yeh', 'sen', 'sen'],
+    ['1', '1', '1', 'lam', 'tah', 'beh'],
+    ['1', '1', '1', 'gem', 'reh', 'gem'],
+    ['1', '3', '6', '5', 'fih', 'waw'],
+    ['8', '7', '8', '4', 'sad', 'sad']
+]
+
 def ProgressBar():
   global loading
   i = 0
@@ -37,7 +45,14 @@ def image_processing():
   window['-BROWSE-'].update(disabled=True)
   # The heavy computation should be done here
   # ----------------------------------------------------------------
-  result = main(filename)
+  try:
+      result = main(filename)  # Your main function call that might raise an exception
+      print(result)
+  except Exception as e:  # Catch any exception and store it in variable 'e'
+      window['-RESULT-'].update("Plate not found")
+      loading = False
+      window['-BROWSE-'].update(disabled=False)
+      return
   
   # ----------------------------------------------------------------
 
@@ -45,7 +60,14 @@ def image_processing():
   loading = False
   window['-BROWSE-'].update(disabled=False)
   
-  LED = random.choice(['Allowed', 'Banned'])
+  LED = 'Banned'
+  
+  for i in range(len(arr)):
+      if np.array_equal(arr[i], result):
+        LED = 'Allowed'
+        break
+        
+        
 
   window['-RESULT-'].update(result)
 

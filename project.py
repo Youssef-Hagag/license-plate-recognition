@@ -25,6 +25,8 @@ additionsHeight = 60
 charWidth = 60
 charHeight = 60
 
+Threshold = 175
+
 #############################################--Classes--##############################################
 class Character:
     def __init__(self, char, template='', width=charWidth, height=charHeight, img=None):
@@ -99,6 +101,7 @@ def buildCharDB():
     Alf7 = Character("alf", 'dataSet/Char/alf_7.png')
     Alf8 = Character("alf", 'dataSet/Char/alf_8.jpg')
     Alf9 = Character("alf", 'dataSet/Char/alf_9.jpg')
+    Alf10 = Character("alf", 'dataSet/Char/alf_10.jpg')
     Beh1 = Character("beh", 'dataSet/Char/beh_1.jpg')
     Beh2 = Character("beh", 'dataSet/Char/beh_2.jpg')
     Beh3 = Character("beh", 'dataSet/Char/beh_3.jpg')
@@ -170,11 +173,11 @@ def buildCharDB():
 
 
     # Numbers
-    One1 = Character("11", 'dataSet/Char/one_1.jpg')
-    One2 = Character("12", 'dataSet/Char/one_2.jpg')
-    One3 = Character("13", 'dataSet/Char/one_3.jpg')
-    One4 = Character("14", 'dataSet/Char/one_4.jpg')
-    One5 = Character("15", 'dataSet/Char/one_5.jpg')
+    One1 = Character("1", 'dataSet/Char/one_1.jpg')
+    One2 = Character("1", 'dataSet/Char/one_2.jpg')
+    One3 = Character("1", 'dataSet/Char/one_3.jpg')
+    One4 = Character("1", 'dataSet/Char/one_4.jpg')
+    One5 = Character("1", 'dataSet/Char/one_5.jpg')
     Two1 = Character("2", 'dataSet/Char/two_1.jpg')
     Two2 = Character("2", 'dataSet/Char/two_2.jpg')
     Two3 = Character("2", 'dataSet/Char/two_3.jpg')
@@ -226,6 +229,8 @@ def buildCharDB():
     CharDataBase.append(Alf7)
     CharDataBase.append(Alf8)
     CharDataBase.append(Alf9)
+    CharDataBase.append(Alf10)
+    
     # Append Beh instances
     CharDataBase.append(Beh1)
     CharDataBase.append(Beh2)
@@ -506,7 +511,7 @@ def isBar(imgI):
         hist2=cv2.calcHist([temp2],[0],None,[256],[0,256]) 
         r = cv2.compareHist(hist1, hist2, method = cv2.HISTCMP_CORREL)
         rCorr = cal_corr(letter.corr,l.corr,letter.col_sum,l.col_sum)
-        if(rCorr>.8 and r > .8):
+        if(rCorr>.85 and r > .85):
             return True
     return False
 
@@ -529,6 +534,30 @@ def intersection(a,b):
     h = min(a[1]+a[3], b[1]+b[3]) - y
     if w<0 or h<0: return False 
     return True
+
+
+def platePreProcess(plate):
+    dim = (1404, 446)
+    plate = cv2.resize(plate, dim, interpolation=cv2.INTER_AREA)
+    height, width = plate.shape[:2]
+    start_x = (width - 50) // 2
+    end_x = start_x + 50
+    plate[:, start_x:end_x] = 255 
+    start_x = width - 30
+    end_x = width
+    plate[:, start_x:end_x] = 255 
+    start_x = 0
+    end_x = 10
+    plate[:, start_x:end_x] = 255 
+    start_x = height - 20
+    end_x = height
+    plate[start_x:end_x, :] = 255 
+    start_x = 0
+    end_x = 5
+    plate[start_x:end_x, :] = 255 
+    
+    return plate  # Return the modified image
+
 
 
 #########################################--Core Functions--############################################
@@ -584,51 +613,14 @@ def plate_detection_using_contours(path):
     else:
         return car
 
-# Detect license plate using contours
-def plate_detection(path):
-    car = pre_process_image(path)
-    edged = cv2.Canny(car, 10, 200)
-    
-    # Find contours in the edged image
-    contours, _ = cv2.findContours(edged, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    
-    # Sort the contours by area in descending order and select the top 5 contours
-    contours = sorted(contours, key=cv2.contourArea, reverse=True)[:5]
 
-    # Iterate through the detected contours
-    for contour in contours:
-        # Calculate the arc length of the contour
-        arc_length = cv2.arcLength(contour, True)
-        
-        # Approximate the contour shape to a polygonal curve
-        approx = cv2.approxPolyDP(contour, 0.02 * arc_length, True)
-        
-        # Check if the approximated polygon has 4 sides (likely a license plate)
-        if len(approx) == 4:
-            plate_contour = approx
-            break  # Stop iterating if a valid plate contour is found
-    
-    # Get the bounding rectangle of the plate contour
-    (x, y, w, h) = cv2.boundingRect(plate_contour)
-    
-    # Extract the region of interest (ROI) containing the detected plate
-    plate = car[y:y + h, x:x + w]
-    return plate
 
 def PlateToLetters(plate):
-    dim = (1404, 446)
-    plate = cv2.resize(plate, dim, interpolation = cv2.INTER_AREA)
+    plate = platePreProcess(plate)
     blurPlate = cv2.blur(plate,(10,10))
     blurPlate = cv2.blur(blurPlate,(10,10))
-    medianPlate= cv2.medianBlur(blurPlate,5)
-    height, _ = medianPlate.shape[:2]
-    cropped_median_plate = medianPlate[0:height-20, :]
-    _, thresholdPlate = cv2.threshold(cropped_median_plate,150,255,cv2.THRESH_BINARY)
-    
-    ## i want to crop 20 px from this image  thresholdPlate
-    
-    
-    
+    medianPlate= cv2.medianBlur(blurPlate,5)    
+    _, thresholdPlate = cv2.threshold(medianPlate,Threshold,255,cv2.THRESH_BINARY)    
     # Create a custom kernel representing a 45-degree oval
     angle = 45  # Angle for the oval (in degrees)
     kernel_size = (25, 60)  # Size of the kernel
@@ -658,9 +650,6 @@ def PlateToLetters(plate):
 
     # Concatenate the processed halves back together
     result_plate = np.hstack((open_left, open_right))
-    
-    cv2.imshow('bin', result_plate)
-    cv2.waitKey(0)
     contours, _ = cv2.findContours(result_plate, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     contours = sort_contours(contours)[0]
 
@@ -671,17 +660,14 @@ def PlateToLetters(plate):
     T = False
     for contour in contours:
         x,y,w,h = rect = cv2.boundingRect(contour)
-        print(x,y,w,h)
-        print(cv2.contourArea(contour))
-        if(y>35 and x > 10 and y+h<750 and cv2.contourArea(contour) > 3000 and y < 575 and cv2.contourArea(contour) <100000):
-            print("zzzzzzzzzzzzzzzzzzzz")
+
+        if(y>30 and x > 10 and w < 250 and y+h<750 and cv2.contourArea(contour) > 3000 and y < 575 and cv2.contourArea(contour) <100000):
             for index,r in enumerate(rects):
                 if((x-20<r[0] and x+w+20 > r[0]+r[2]) or (x+20>r[0] and x+w-20 < r[0]+r[2])):
                     T = True
                     miniImg = np.copy(plate[y:y+h,x:x+h])
                     if miniImg is not None:
                         if(isAdditionLetter(miniImg)):
-                            print("addition")
                             minY = min(y,r[1])                    
                             maxH = max(y+h,r[1]+r[3])-minY
                             minX = min(x,r[0])                    
@@ -705,8 +691,12 @@ def PlateToLetters(plate):
         imgX = None
         imgX = np.copy(plate[rect[1]:rect[1]+rect[3],rect[0]:rect[0]+rect[2]])
         if imgX is not None:
-            if(not isBar(imgX)):
-                letters.append(imgX)
+            letters.append(imgX)
+
+            # cv2.imshow('Image', imgX)
+            # cv2.waitKey(0)
+            # if(not isBar(imgX)):
+            #     letters.append(imgX)
     return letters
 
 def extract_features(letters):
@@ -731,15 +721,14 @@ labels = []    # Add the corresponding labels
 
 # Initialize the KNN classifier
 k = 3
-knn = KNeighborsClassifier(n_neighbors=k,p=2,metric='euclidean')
+knn = KNeighborsClassifier(n_neighbors=3,p=2,metric='euclidean')
 
 def testKnn():
     # Split the data into training and testing sets
-    train_input, test_input, train_output, test_output = train_test_split(features, labels, test_size=20, random_state=200)
+    train_input, test_input, train_output, test_output = train_test_split(features, labels, test_size=20, random_state=203)
 
     # Train the classifier
     knn.fit(train_input, train_output)
-    print (test_input)
     # Predict using the trained classifier
     predictions = knn.predict(test_input)
 
@@ -762,7 +751,7 @@ def extract_features(letters):
 
     for letter in letters:
         # Perform resizing of the template
-        ret, letter = cv2.threshold(letter,140,255,cv2.THRESH_BINARY)
+        ret, letter = cv2.threshold(letter,Threshold,255,cv2.THRESH_BINARY)
         dim = (charHeight, charWidth)
         letter = cv2.resize(letter, dim, interpolation=cv2.INTER_AREA)
         corr, col_sum = char_calculations(letter, charHeight, charWidth)
@@ -772,46 +761,16 @@ def extract_features(letters):
     return letterFeatures
 
 
-##############################################--KNN--################################################
-# Extract features and labels from your CharDataBase
-features = []  # Add the features you want to use for similarity
-labels = []    # Add the corresponding labels
-
-# Initialize the KNN classifier
-k = 3
-knn = KNeighborsClassifier(n_neighbors=k,p=2,metric='euclidean')
-
-def testKnn():
-    # Split the data into training and testing sets
-    train_input, test_input, train_output, test_output = train_test_split(features, labels, test_size=20, random_state=200)
-
-    # Train the classifier
-    knn.fit(train_input, train_output)
-    print (test_input)
-    # Predict using the trained classifier
-    predictions = knn.predict(test_input)
-
-    # Evaluate the accuracy
-    accuracy = accuracy_score(test_output, predictions)
-    print("Accuracy:", accuracy)
-
-def trainKnn():
-    # Train the classifier
-    knn.fit(features, labels)
-
-
-def predictKnn(letter):
-    prediction = knn.predict(letter)
-    return prediction
-    
 
 ##############################################--Main--################################################
 def main(path):
     
-    print("entering main")
     buildCharDB()
     buildAdditionsDB()
     buildParasitismsDB()
+    
+    global Threshold
+    Threshold=175
 
     for char_instance in CharDataBase:
         # Assuming col_sum is a 2D array, flatten it to 1D
@@ -825,20 +784,16 @@ def main(path):
         features.append(combined_features)
         labels.append(char_instance.char)
 
-
     plate = plate_detection_using_contours(path)
-    # cv2.imshow("plate",plate)
-    # cv2.waitKey(0)
+    
+    cv2.imwrite('plate.jpg',plate)
     
     
     letters = PlateToLetters(plate)
-    # cv2.waitKey(0)
-
-    # #loop and show all images
-    # print (len(letters))
-    # for i in range(len(letters)):
-    #     cv2.imshow('Image', letters[i])
-    #     cv2.waitKey(0)
+    while(len(letters)<2 and Threshold>90):
+        Threshold-=75
+        letters = PlateToLetters(plate)
+    
 
     #extract features from the resulting letters
     letterFeatures = extract_features(letters)
@@ -847,6 +802,3 @@ def main(path):
     trainKnn()
 
     return predictKnn(letterFeatures)
-print("############################################################################################################")
-print(main("cars\car32.jpg"))
-
