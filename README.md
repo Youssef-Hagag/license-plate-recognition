@@ -3,17 +3,11 @@
 The purpose of this project is to develop a robust and accurate Car License Plate Recognition (LPR) system. The system will be designed to automatically detect and recognize license plates from images, providing valuable applications in security, law enforcement, parking management, and more, we will mainly focus on the parking management application for this project.
 
 ## Table of Contents
-
-- [Introduction](#introduction)
 - [Libraries Used](#libraries-used)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Contributing](#contributing)
 - [License](#license)
-
-## Introduction
-
-Provide a more detailed overview of your project. Explain its purpose, features, and any other relevant information.
 
 ## Libraries Used
 
