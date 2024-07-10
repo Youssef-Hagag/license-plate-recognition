@@ -14,7 +14,7 @@ The purpose of this project is to develop a robust and accurate Car License Plat
 List the libraries used in your project and their purposes:
 
 - **NumPy**: Used for numerical operations and array manipulation in Python.
-- **OpenCV (cv2)**: Employed for computer vision tasks like image processing, video capture, and manipulation.
+- **OpenCV (cv2)**: Employed for computer vision tasks like image processing and manipulation.
 - **Math**: Standard Python library for mathematical operations.
 - **scikit-learn (sklearn)**: Used for machine learning tasks, including the K-Nearest Neighbors (KNN) classifier.
 - **Numba**: Utilized for JIT (Just-In-Time) compilation to optimize performance in specific functions.
@@ -63,17 +63,28 @@ Upon launching the application, follow these steps:
 5. **Result Display**: The recognized license plate characters will be presented in the 'Processing Result' section of the GUI.
 6. **LED Indicator**: An LED indicator will show 'Allowed' or 'Banned' based on a predefined comparison array.
 
-## Contributing
+## Contributers
+<table>
+  <tr>
+<td align="center">
+<a href="https://github.com/MoSobhy01" target="_black">
+<img src="https://avatars.githubusercontent.com/u/94849658?v=4" width="150px;" alt="Mahmoud Sobhy"/><br /><sub><b>Mahmoud Sobhy</b></sub></a><br />
+</td>
 
-Contributions to this project are highly appreciated. To contribute:
+<td align="center">
+<a href="https://github.com/MhmoudYahia" target="_black">
+<img src="https://avatars.githubusercontent.com/u/94763036?v=4" width="150px;" alt="Mahmoud Yehia"/><br /><sub><b>Mahmoud Yehia</b></sub></a><br />
+</td>
 
-1. **Fork the Repository**: Fork this repository on GitHub.
-2. **Create a New Branch**: Create a new branch for your feature or bug fix.
-3. **Make Changes**: Implement your changes and ensure they are properly tested.
-4. **Commit Changes**: Commit your modifications with clear and descriptive commit messages.
-5. **Push Changes**: Push your changes to your forked repository.
-6. **Open a Pull Request**: Submit a pull request to the `main` branch of this repository for review.
+<td align="center">
+<a href="https://github.com/Yousef-Rabia" target="_black">
+<img src="https://avatars.githubusercontent.com/u/78663127?v=4" width="150px;" alt="Youssef Rabia"/><br /><sub><b>Yousef Rabia</b></sub></a><br />
+</td>
 
-## License
+<td align="center">
+<a href="https://github.com/Youssef-Hagag" target="_black">
+<img src="https://avatars.githubusercontent.com/u/94843229?v=4" width="150px;" alt="Youssef Hagag"/><br /><sub><b>Youssef Hagag</b></sub></a><br />
+</td>
 
-This project is licensed under the [MIT License](LICENSE). Feel free to modify and distribute it under the terms of this license.
+</tr>
+ </table>
